@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:site_see/pages/camera_page.dart';
+import 'package:site_see/pages/map_page.dart';
 
 void main() {
   runApp(const SiteSee());
@@ -20,6 +21,7 @@ class SiteSee extends StatelessWidget {
       initialRoute: "/",
       routes: {
         "/": (context) => const CameraPage(),
+        "/map": (context) => const MapPage(),
       }
     );
   }

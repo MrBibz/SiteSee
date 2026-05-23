@@ -13,7 +13,7 @@ class _MapPageState extends State<MapPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: CameraWidget(),
+      body: MapWidget(),
     );
   }
 }

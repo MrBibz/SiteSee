@@ -3,6 +3,9 @@
         android:label="site_see"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
+        <meta-data android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyASslGMjYB1qvI_4g_fWLHwgJSaHn8FHjs"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"
