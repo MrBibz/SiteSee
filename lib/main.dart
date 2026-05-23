@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:site_see/pages/camera_page.dart';
 
 void main() {
   runApp(const SiteSee());
