@@ -1,8 +1,20 @@
 // lib/main.dart
 
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize the connection between the database and the app
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint("Firebase initialization failed: $e");
+  }
+
+  // Main code running
   runApp(const MyApp());
 }
 
@@ -34,14 +46,18 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // L'état local de la page
-  int _compteur = 0;
+  // L'état local pour d'autres éléments
   final List<String> _elements = ['Flutter', 'Dart', 'Android Studio'];
 
+  // Référence au document Firestore
+  final DocumentReference _counterRef = 
+      FirebaseFirestore.instance.collection('app_data').doc('counter');
+
   void _incrementer() {
-    setState(() {
-      _compteur++;
-    });
+    // Utilisation d'une transaction ouFieldValue.increment pour être sûr du résultat
+    _counterRef.set({
+      'value': FieldValue.increment(1)
+    }, SetOptions(merge: true));
   }
 
   @override
@@ -49,7 +65,7 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       // Barre du haut
       appBar: AppBar(
-        title: const Text('Mon App'),
+        title: const Text('Mon App (Firebase)'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
@@ -71,24 +87,41 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Section compteur
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Compteur :',
-                      style: TextStyle(fontSize: 18),
+            // Section compteur avec StreamBuilder pour le temps réel
+            StreamBuilder<DocumentSnapshot>(
+              stream: _counterRef.snapshots(),
+              builder: (context, snapshot) {
+                int count = 0;
+                if (snapshot.hasData && snapshot.data!.exists) {
+                  count = (snapshot.data!.data() as Map<String, dynamic>)['value'] ?? 0;
+                }
+
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Compteur (Cloud) :',
+                          style: TextStyle(fontSize: 18),
+                        ),
+                        if (snapshot.connectionState == ConnectionState.waiting)
+                          const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        else
+                          Text(
+                            '$count',
+                            style: Theme.of(context).textTheme.headlineMedium,
+                          ),
+                      ],
                     ),
-                    Text(
-                      '$_compteur',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
 
             const SizedBox(height: 24), // espace vertical
@@ -142,7 +175,6 @@ class DetailPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Détails'),
-        // La flèche "retour" est ajoutée automatiquement
       ),
       body: Center(
         child: Column(
