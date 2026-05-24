@@ -30,19 +30,19 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  camera: ^0.11.3
-  path_provider: ^2.1.5
-  path: ^1.9.0
-  gal: ^2.3.0
-  permission_handler: ^11.3.1
+
+  flutter_map: ^8.3.0       # Carte interactive OpenStreetMap
+  latlong2: ^0.9.1          # Types de coordonnées GPS
+  geolocator: ^14.0.2       # Accès au GPS du téléphone
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
   # Adding the firebase core elements
-  firebase_core: ^3.11.0
-  cloud_firestore: ^5.6.1
+  firebase_core: ^4.9.0
+  cloud_firestore: ^6.4.1
+  image: ^4.2.0
 
 dev_dependencies:
   flutter_test:
