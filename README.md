@@ -1,7 +1,7 @@
 # SiteSee
 
 > **"Where to see a Site, and some even hidden."**
-> Built for the Hackathon, SiteSee is a location-aware photo-sharing platform designed with gamified progression, adaptive spatial privacy thresholds, and real-time proximity-based content unlocking.
+> Built for the HackTheMountain, SiteSee is a location-aware photo-sharing platform designed with gamified progression, adaptive spatial privacy thresholds, and real-time proximity-based content unlocking.
 
 ---
 
