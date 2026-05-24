@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 
 /// Appelle le canal natif Android pour la caméra.
 /// Aucun plugin tiers — pure MethodChannel vers MainActivity.java.
@@ -18,6 +19,12 @@ class PhotoPickerSheet extends StatelessWidget {
   final ValueChanged<String> onPathSelected;
 
   const PhotoPickerSheet({super.key, required this.onPathSelected});
+
+  Future<String?> _pickFromGallery() async {
+    final picker = ImagePicker();
+    final file = await picker.pickImage(source: ImageSource.gallery);
+    return file?.path;
+  }
 
   static void show(BuildContext context, ValueChanged<String> onPathSelected) {
     showModalBottomSheet(
@@ -51,13 +58,18 @@ class PhotoPickerSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            Text('Prendre une photo',
+            Text('Ajouter une photo',
                 style: Theme.of(context)
                     .textTheme
                     .titleMedium
                     ?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
 
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Choisir depuis la galerie'),
+              onTap: () => _handle(context, _pickFromGallery()),
+            ),
             ListTile(
               leading: const Icon(Icons.camera_alt),
               title: const Text('Ouvrir la caméra'),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'services/profile_service.dart';
 import 'pages/home_page.dart';
 import 'pages/photo_page.dart';
 import 'pages/map_page.dart';
@@ -8,6 +9,7 @@ import 'widgets/bottom_nav_bar.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await ProfileService.instance.initialize();
   runApp(const MainApp());
 }
 
@@ -17,7 +19,7 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'SiteSee, where to see a Site',
+      title: 'SiteSee, where to see a Site, and some even hidden',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
@@ -40,8 +42,6 @@ class MainScaffold extends StatefulWidget {
 
 class _MainScaffoldState extends State<MainScaffold> {
   int _selectedIndex = 0;
-
-  // Pages (écrans complets) — dans pages/
   final List<Widget> _pages = const [
     HomePage(),
     PhotoPage(),
@@ -52,8 +52,6 @@ class _MainScaffoldState extends State<MainScaffold> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _pages[_selectedIndex],
-
-      // Widget réutilisable — dans widgets/
       bottomNavigationBar: AppBottomNavBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) =>
