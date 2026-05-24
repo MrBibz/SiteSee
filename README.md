@@ -1,5 +1,3 @@
----
-
 # 🗺️ SiteSee
 
 > **"Where to see a Site, and some even hidden."**
