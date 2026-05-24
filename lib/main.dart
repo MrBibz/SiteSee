@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:site_see/widgets/app_theme.dart';
 import 'services/profile_service.dart';
 import 'pages/home_page.dart';
 import 'pages/photo_page.dart';
@@ -21,13 +22,7 @@ class MainApp extends StatelessWidget {
     return MaterialApp(
       title: 'SiteSee, where to see a Site, and some even hidden',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2563EB),
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-      ),
+      theme: buildSiteSeeTheme(),
       home: const MainScaffold(),
     );
   }
