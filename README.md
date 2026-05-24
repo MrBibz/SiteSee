@@ -1,11 +1,11 @@
-# 🗺️ SiteSee
+# SiteSee
 
 > **"Where to see a Site, and some even hidden."**
 > Built for the Hackathon, SiteSee is a location-aware photo-sharing platform designed with gamified progression, adaptive spatial privacy thresholds, and real-time proximity-based content unlocking.
 
 ---
 
-## 🚀 The Problem & Our Solution
+## The Problem & Our Solution
 
 Traditional photo-sharing apps suffer from content oversaturation, detached engagement, and rigid privacy choices. Users are rarely encouraged to physically explore environments, and location settings are binary: entirely public or entirely private.
 
@@ -17,7 +17,7 @@ Traditional photo-sharing apps suffer from content oversaturation, detached enga
 
 ---
 
-## ✨ Features
+## Features
 
 * **Interactive Exploration Radar Map:** Powered by OpenStreetMap and custom map layers, rendering custom, color-coded, real-time spatial indicators for different visibility styles.
 * **Proximity Filter Engine:** Background evaluation architecture that loops every 3 seconds to measure geodesic distance ($\le 15\text{m}$) using high-accuracy device GPS tracking.
@@ -27,7 +27,7 @@ Traditional photo-sharing apps suffer from content oversaturation, detached enga
 
 ---
 
-## 🛠️ Architecture & Tech Stack
+## Architecture & Tech Stack
 
 SiteSee uses a clean, decoupling layout pattern separating the presentation screens from underlying domain services:
 
@@ -36,7 +36,7 @@ SiteSee uses a clean, decoupling layout pattern separating the presentation scre
 * **Backend Services:** [Firebase Core](https://firebase.google.com/) (Identity & Cloud synchronization infrastructure)
 * **Local Staging:** Custom Async Dart Services (Memory & Local Storage persistence)
 
-### 📂 Directory Overview
+### Directory Overview
 
 ```text
 lib/
@@ -49,7 +49,7 @@ lib/
 
 ---
 
-## ⚡ Quick Start & Installation
+## Quick Start & Installation
 
 ### Prerequisites
 
@@ -101,9 +101,9 @@ To experience the core proximity logic during static testing, we recommend utili
 
 ---
 
-## 👥 The Team
+## The Team
 
-Built with 💛 for the hackathon by:
+Built with love for the hackathon by:
 
 * **Nicolas Bibeau** 
 * **Hamza Gharbi**
