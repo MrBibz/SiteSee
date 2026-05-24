@@ -44,7 +44,14 @@ class MapPageState extends State<MapPage> {
   }
 
   void moveMapToCoordinates(double latitude, double longitude) {
-    _mapController.move(LatLng(latitude, longitude), 16);
+    _mapController.move(LatLng(latitude, longitude), 16.0);
+    try {
+      final matchingPhoto = _visiblePhotos.firstWhere(
+            (photo) => photo.latitude == latitude && photo.longitude == longitude,
+      );
+      _showPhotoDetails(matchingPhoto);
+    } catch (_) {
+    }
   }
 
   // ─── GPS ──────────────────────────────────────────────────────────────────
