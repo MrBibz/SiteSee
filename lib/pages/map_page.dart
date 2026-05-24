@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import '../models/site_photo.dart';
 import '../services/photo_service.dart';
 import '../services/profile_service.dart';
+import '../services/notification_service.dart';
 import '../widgets/user_location_marker.dart';
 import '../widgets/gps_status_banner.dart';
 import '../widgets/app_theme.dart';
@@ -21,10 +22,14 @@ class MapPage extends StatefulWidget {
 class MapPageState extends State<MapPage> {
   final MapController _mapController = MapController();
   final PhotoService _photoService = PhotoService();
-  final Set<String> _notifiedHiddenIds = {};
+  final Set<String> _visibleHiddenIds = {};
+  final Set<String> _awardedHiddenIds = {};
+  Timer? _notificationCooldownTimer;
+  DateTime? _lastHiddenNotificationAt;
+  bool _pendingHiddenNotification = false;
 
   static const Duration _refreshInterval    = Duration(seconds: 3);
-  static const double   _hiddenDistanceMeters = 100;
+  static const double   _hiddenDistanceMeters = 20;
 
   LatLng?        _userLocation;
   List<SitePhoto> _visiblePhotos = [];
@@ -42,6 +47,7 @@ class MapPageState extends State<MapPage> {
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _notificationCooldownTimer?.cancel();
     super.dispose();
   }
 
@@ -130,25 +136,55 @@ class MapPageState extends State<MapPage> {
     LatLng? userPos,
   ) async {
     if (!mounted || userPos == null) return;
-    final newlyHidden = visible
-        .where((photo) =>
-            photo.visibility == 'hidden' &&
-            !_notifiedHiddenIds.contains(photo.id))
-        .toList();
-    if (newlyHidden.isEmpty) return;
+    final currentHidden = visible
+        .where((photo) => photo.visibility == 'hidden')
+        .map((photo) => photo.id)
+        .toSet();
+    final newlyVisible = currentHidden.difference(_visibleHiddenIds);
+    _visibleHiddenIds
+      ..clear()
+      ..addAll(currentHidden);
 
-    for (final photo in newlyHidden) {
-      _notifiedHiddenIds.add(photo.id);
+    if (newlyVisible.isEmpty) return;
+    final newAwards = newlyVisible
+        .where((id) => !_awardedHiddenIds.contains(id))
+        .toList();
+    if (newAwards.isEmpty) return;
+
+    for (final id in newAwards) {
+      _awardedHiddenIds.add(id);
       await ProfileService.instance.awardHiddenArtXp();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Tu es proche d\'un art magnifique, 2x EXP'),
-          duration: Duration(seconds: 3),
-        ),
-      );
     }
+    _triggerHiddenArtNotification();
+  }
+
+  void _triggerHiddenArtNotification() {
+    const cooldown = Duration(seconds: 10);
+    final now = DateTime.now();
+    final last = _lastHiddenNotificationAt;
+
+    if (last == null || now.difference(last) >= cooldown) {
+      _lastHiddenNotificationAt = now;
+      _pendingHiddenNotification = false;
+      NotificationService.instance.showHiddenArtNotification(
+        'Tu es proche d\'un art magnifique, 2x EXP',
+      );
+      return;
+    }
+
+    _pendingHiddenNotification = true;
+    _notificationCooldownTimer ??= Timer(
+      cooldown - now.difference(last),
+      () {
+        _notificationCooldownTimer = null;
+        if (!_pendingHiddenNotification) return;
+        _pendingHiddenNotification = false;
+        _lastHiddenNotificationAt = DateTime.now();
+        NotificationService.instance.showHiddenArtNotification(
+          'Tu es proche d\'un art magnifique, 2x EXP',
+        );
+      },
+    );
   }
 
   // ─── Photo detail sheet ───────────────────────────────────────────────────

@@ -7,6 +7,7 @@
     <!-- Permissions pour lire/écrire dans la galerie -->
     <!-- Android 13+ utilise READ_MEDIA_IMAGES à la place de READ_EXTERNAL_STORAGE -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"

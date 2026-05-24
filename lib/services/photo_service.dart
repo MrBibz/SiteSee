@@ -116,6 +116,7 @@ class PhotoService {
     return photos;
   }
 
+
   // ── Privé ────────────────────────────────────────────────────────────────
 
   Future<String> _encodeImageBase64(File imageFile) async {
