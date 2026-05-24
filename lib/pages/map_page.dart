@@ -8,8 +8,8 @@ import '../models/site_photo.dart';
 import '../services/photo_service.dart';
 import '../widgets/user_location_marker.dart';
 import '../widgets/gps_status_banner.dart';
+import '../widgets/app_theme.dart';
 
-/// Page Map — gère la logique GPS et délègue l'UI à ses widgets.
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
 
@@ -20,13 +20,14 @@ class MapPage extends StatefulWidget {
 class _MapPageState extends State<MapPage> {
   final MapController _mapController = MapController();
   final PhotoService _photoService = PhotoService();
-  static const Duration _refreshInterval = Duration(seconds: 3);
-  static const double _hiddenDistanceMeters = 15;
 
-  LatLng? _userLocation;
+  static const Duration _refreshInterval    = Duration(seconds: 3);
+  static const double   _hiddenDistanceMeters = 15;
+
+  LatLng?        _userLocation;
   List<SitePhoto> _visiblePhotos = [];
-  String _statusMessage = 'Recherche de ta position...';
-  Timer? _refreshTimer;
+  String         _statusMessage  = 'Recherche de ta position…';
+  Timer?         _refreshTimer;
 
   @override
   void initState() {
@@ -42,65 +43,51 @@ class _MapPageState extends State<MapPage> {
     super.dispose();
   }
 
+  // ─── GPS ──────────────────────────────────────────────────────────────────
+
   Future<LatLng?> _getUserLocation({bool moveMap = false}) async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      if (mounted) {
-        setState(() => _statusMessage = 'Service GPS désactivé');
-      }
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      if (mounted) setState(() => _statusMessage = 'Service GPS désactivé');
       return null;
     }
 
-    LocationPermission permission = await Geolocator.checkPermission();
+    var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        if (mounted) {
-          setState(() => _statusMessage = 'Permission GPS refusée');
-        }
-        return null;
-      }
     }
-    if (permission == LocationPermission.deniedForever) {
-      if (mounted) {
-        setState(() => _statusMessage = 'Permission GPS refusée définitivement');
-      }
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      if (mounted) setState(() => _statusMessage = 'Permission GPS refusée');
       return null;
     }
 
-    final Position position = await Geolocator.getCurrentPosition(
-      locationSettings:
-      const LocationSettings(accuracy: LocationAccuracy.high),
+    final pos = await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
     );
-
-    final userPos = LatLng(position.latitude, position.longitude);
+    final userPos = LatLng(pos.latitude, pos.longitude);
     if (mounted) {
       setState(() {
-        _userLocation = userPos;
+        _userLocation  = userPos;
         _statusMessage = 'Position mise à jour';
       });
     }
-    if (moveMap) {
-      _mapController.move(userPos, 13);
-    }
+    if (moveMap) _mapController.move(userPos, 15);
     return userPos;
   }
 
   void _centerOnUser() {
     if (_userLocation != null) {
-      _mapController.move(_userLocation!, 13);
+      _mapController.move(_userLocation!, 15);
     } else {
       _getUserLocation(moveMap: true);
     }
   }
 
   Future<void> _refreshPhotos() async {
-    final userPos = await _getUserLocation();
+    final userPos   = await _getUserLocation();
     final allPhotos = await _photoService.fetchPhotos();
-    final filtered = _filterPhotos(allPhotos, userPos);
-    if (mounted) {
-      setState(() => _visiblePhotos = filtered);
-    }
+    final filtered  = _filterPhotos(allPhotos, userPos);
+    if (mounted) setState(() => _visiblePhotos = filtered);
   }
 
   List<SitePhoto> _filterPhotos(List<SitePhoto> photos, LatLng? userPos) {
@@ -110,13 +97,11 @@ class _MapPageState extends State<MapPage> {
           return true;
         case 'hidden':
           if (userPos == null) return false;
-          final distance = Geolocator.distanceBetween(
-            userPos.latitude,
-            userPos.longitude,
-            photo.latitude,
-            photo.longitude,
+          final d = Geolocator.distanceBetween(
+            userPos.latitude, userPos.longitude,
+            photo.latitude,  photo.longitude,
           );
-          return distance <= _hiddenDistanceMeters;
+          return d <= _hiddenDistanceMeters;
         case 'private':
           return photo.ownerId == _photoService.currentOwnerId;
         default:
@@ -125,91 +110,70 @@ class _MapPageState extends State<MapPage> {
     }).toList();
   }
 
+  // ─── Photo detail sheet ───────────────────────────────────────────────────
+
   void _showPhotoDetails(SitePhoto photo) {
     showModalBottomSheet(
       context: context,
-      builder: (_) {
-        final imageBytes = photo.imageBase64.isNotEmpty
-            ? base64Decode(photo.imageBase64)
-            : null;
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Photo',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 12),
-                if (imageBytes != null)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.memory(imageBytes, height: 220, fit: BoxFit.cover),
-                  )
-                else
-                  Container(
-                    height: 220,
-                    width: double.infinity,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.image_not_supported),
-                  ),
-                const SizedBox(height: 12),
-                Text(photo.description.isEmpty ? 'Aucune description' : photo.description),
-                const SizedBox(height: 6),
-                Text('Visibilité : ${photo.visibility}'),
-              ],
-            ),
-          ),
-        );
-      },
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _PhotoDetailSheet(photo: photo),
     );
+  }
+
+  // ─── Marker helpers ───────────────────────────────────────────────────────
+
+  ({Color fg, Color bg, Color bdr}) _pinColors(String visibility) {
+    return switch (visibility) {
+      'hidden'  => (fg: SiteColors.amber,  bg: SiteColors.hiddenBg,  bdr: SiteColors.hiddenBdr),
+      'private' => (fg: SiteColors.purple, bg: SiteColors.privateBg, bdr: SiteColors.privateBdr),
+      _         => (fg: SiteColors.blue,   bg: SiteColors.publicBg,  bdr: SiteColors.publicBdr),
+    };
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Carte'), centerTitle: true),
+      appBar: AppBar(title: const Text('Carte')),
       body: Stack(
         children: [
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
               initialCenter: _userLocation ?? const LatLng(20, 0),
-              initialZoom: _userLocation != null ? 13 : 2,
+              initialZoom:   _userLocation != null ? 15 : 2,
               minZoom: 2,
               maxZoom: 18,
             ),
             children: [
               TileLayer(
-                urlTemplate:
-                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.example.flutter_demo',
+                // Dark map tiles look great with this theme.
+                // Swap the URL to a dark tile provider (e.g. CartoDB Dark Matter)
+                // for the full dark aesthetic:
+                // 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
               ),
-              // Widget extrait : marqueur de position
               if (_userLocation != null)
                 UserLocationMarker(position: _userLocation!),
               if (_visiblePhotos.isNotEmpty)
                 MarkerLayer(
                   markers: _visiblePhotos.map((photo) {
-                    final color = photo.visibility == 'private'
-                        ? Colors.deepPurple
-                        : (photo.visibility == 'hidden'
-                        ? Colors.orange
-                        : Colors.blue);
+                    final c = _pinColors(photo.visibility);
                     return Marker(
                       point: LatLng(photo.latitude, photo.longitude),
-                      width: 42,
-                      height: 42,
+                      width: 44,
+                      height: 44,
                       child: GestureDetector(
                         onTap: () => _showPhotoDetails(photo),
-                        child: Icon(Icons.photo, color: color, size: 32),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: c.bg,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: c.bdr, width: 1.5),
+                          ),
+                          child: Icon(Icons.photo_camera_outlined, color: c.fg, size: 20),
+                        ),
                       ),
                     );
                   }).toList(),
@@ -217,19 +181,178 @@ class _MapPageState extends State<MapPage> {
             ],
           ),
 
-          // Widget extrait : bannière GPS
           if (_userLocation == null)
             GpsStatusBanner(message: _statusMessage),
 
+          // Legend
           Positioned(
-            bottom: 24,
+            bottom: 80,
+            left: 16,
+            child: _MapLegend(),
+          ),
+
+          // FAB — centre on user
+          Positioned(
+            bottom: 16,
             right: 16,
-            child: FloatingActionButton(
-              onPressed: _centerOnUser,
-              tooltip: 'Ma position',
-              child: const Icon(Icons.my_location),
+            child: SizedBox(
+              width: 48,
+              height: 48,
+              child: FloatingActionButton(
+                onPressed: _centerOnUser,
+                tooltip: 'Ma position',
+                child: const Icon(Icons.my_location_outlined, size: 20),
+              ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Map legend ───────────────────────────────────────────────────────────────
+
+class _MapLegend extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    const items = [
+      (label: 'Public',      color: SiteColors.blue),
+      (label: 'Masqué',      color: SiteColors.amber),
+      (label: 'Privé',       color: SiteColors.purple),
+    ];
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: SiteColors.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: SiteColors.border, width: 0.5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: items.expand((item) => [
+          Container(
+            width: 7, height: 7,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: item.color),
+          ),
+          const SizedBox(width: 4),
+          Text(item.label, style: SiteFonts.mono(size: 10)),
+          const SizedBox(width: 10),
+        ]).toList()..removeLast(),
+      ),
+    );
+  }
+}
+
+// ─── Photo detail bottom sheet ────────────────────────────────────────────────
+
+class _PhotoDetailSheet extends StatelessWidget {
+  final SitePhoto photo;
+  const _PhotoDetailSheet({required this.photo});
+
+  @override
+  Widget build(BuildContext context) {
+    final imageBytes = photo.imageBase64.isNotEmpty
+        ? base64Decode(photo.imageBase64)
+        : null;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: SiteColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        border: Border(top: BorderSide(color: SiteColors.border, width: 0.5)),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36, height: 4,
+                  decoration: BoxDecoration(
+                    color: SiteColors.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: imageBytes != null
+                    ? Image.memory(
+                  imageBytes,
+                  height: 220,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                )
+                    : Container(
+                  height: 220,
+                  width: double.infinity,
+                  color: SiteColors.surface2,
+                  child: const Icon(
+                    Icons.image_not_supported_outlined,
+                    color: SiteColors.muted,
+                    size: 48,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                photo.description.isEmpty ? 'Aucune description' : photo.description,
+                style: SiteFonts.heading(size: 15),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  _DetailChip(
+                    icon: Icons.visibility_outlined,
+                    label: _visLabel(photo.visibility),
+                  ),
+                  const SizedBox(width: 8),
+                  _DetailChip(
+                    icon: Icons.location_on_outlined,
+                    label: '${photo.latitude.toStringAsFixed(4)}, ${photo.longitude.toStringAsFixed(4)}',
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _visLabel(String v) => switch (v) {
+    'public'  => 'Public',
+    'hidden'  => 'Masqué',
+    'private' => 'Privé',
+    _         => v,
+  };
+}
+
+class _DetailChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _DetailChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: SiteColors.surface2,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: SiteColors.border, width: 0.5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: SiteColors.muted),
+          const SizedBox(width: 5),
+          Text(label, style: SiteFonts.mono(size: 10)),
         ],
       ),
     );

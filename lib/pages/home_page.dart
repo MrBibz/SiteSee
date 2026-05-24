@@ -6,8 +6,8 @@ import '../models/user_profile.dart';
 import '../services/photo_service.dart';
 import '../services/profile_service.dart';
 import 'profile_page.dart';
+import '../widgets/app_theme.dart';
 
-/// Page d'accueil — écran entier, pas de logique métier ici.
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -24,43 +24,37 @@ class _HomePageState extends State<HomePage> {
       context,
       MaterialPageRoute(builder: (_) => const ProfilePage()),
     );
-    if (updated == true && mounted) {
-      setState(() {});
-    }
+    if (updated == true && mounted) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     final profile = _profileService.profile;
-
     return Scaffold(
-      appBar: AppBar(title: const Text('Accueil'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text('SiteSee'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: _IconButton(
+              icon: Icons.settings_outlined,
+              onTap: () {},
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Menu d\'accueil',
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Retrouve ton profil, ton niveau et tes dernières publications.',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(color: Colors.grey[600]),
-              ),
-              const SizedBox(height: 20),
               _ProfileCard(profile: profile, onTap: _openProfile),
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
               _LevelCard(profile: profile),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
+              _SectionLabel('Publications récentes'),
+              const SizedBox(height: 10),
               _RecentPostsCard(
                 ownerId: profile.ownerId,
                 photoService: _photoService,
@@ -73,6 +67,8 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
+// ─── Profile card ─────────────────────────────────────────────────────────────
+
 class _ProfileCard extends StatelessWidget {
   final UserProfile profile;
   final VoidCallback onTap;
@@ -82,71 +78,53 @@ class _ProfileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final avatarFile = profile.avatarPath != null &&
-            File(profile.avatarPath!).existsSync()
+        File(profile.avatarPath!).existsSync()
         ? File(profile.avatarPath!)
         : null;
-    return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 28,
-                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                backgroundImage:
-                    avatarFile != null ? FileImage(avatarFile) : null,
-                child: avatarFile == null
-                    ? Icon(Icons.person,
-                        color:
-                            Theme.of(context).colorScheme.onPrimaryContainer)
-                    : null,
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(profile.displayName,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 4),
-                    Text('@${profile.username}',
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(color: Colors.grey[600])),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Icon(Icons.verified,
-                            size: 16,
-                            color: Theme.of(context).colorScheme.primary),
-                        const SizedBox(width: 6),
-                        Text(
-                          profile.firebaseUid == null ||
-                                  profile.firebaseUid!.isEmpty
-                              ? 'Compte local'
-                              : 'UID lié',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ],
+
+    return _SurfaceCard(
+      onTap: onTap,
+      child: Row(
+        children: [
+          _Avatar(avatarFile: avatarFile, initials: _initials(profile.displayName)),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  profile.displayName,
+                  style: SiteFonts.heading(size: 15),
                 ),
-              ),
-              Icon(Icons.chevron_right, color: Colors.grey[500]),
-            ],
+                const SizedBox(height: 2),
+                Text(
+                  '@${profile.username}',
+                  style: SiteFonts.mono(size: 11),
+                ),
+                const SizedBox(height: 6),
+                _StatusBadge(
+                  label: profile.firebaseUid == null || profile.firebaseUid!.isEmpty
+                      ? 'Compte local'
+                      : 'UID lié',
+                  color: SiteColors.green,
+                ),
+              ],
+            ),
           ),
-        ),
+          const Icon(Icons.chevron_right, color: SiteColors.muted, size: 18),
+        ],
       ),
     );
   }
+
+  String _initials(String name) {
+    final parts = name.trim().split(' ');
+    if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    return name.isNotEmpty ? name[0].toUpperCase() : '?';
+  }
 }
+
+// ─── Level / XP card ──────────────────────────────────────────────────────────
 
 class _LevelCard extends StatelessWidget {
   final UserProfile profile;
@@ -155,220 +133,346 @@ class _LevelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final xpIntoLevel = profile.xpIntoLevel;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Progression',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Niveau ${profile.level}',
-                    style: Theme.of(context).textTheme.bodyLarge),
-                Text('$xpIntoLevel / ${UserProfile.xpPerLevel} XP',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: Colors.grey[600])),
-              ],
-            ),
-            const SizedBox(height: 10),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: LinearProgressIndicator(
-                value: profile.levelProgress,
-                minHeight: 8,
-                backgroundColor: Colors.grey[200],
+    final xpInto  = profile.xpIntoLevel;
+    final xpTotal = UserProfile.xpPerLevel;
+
+    return _SurfaceCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                'Niv. ${profile.level}',
+                style: SiteFonts.heading(size: 28).copyWith(color: SiteColors.amber),
               ),
+              const Spacer(),
+              Text(
+                '$xpInto / $xpTotal XP',
+                style: SiteFonts.mono(size: 11),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          // Thin progress track
+          ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value: profile.levelProgress,
+              minHeight: 4,
+              backgroundColor: const Color(0xFF1C2230),
+              valueColor: const AlwaysStoppedAnimation(SiteColors.amber),
             ),
-            const SizedBox(height: 10),
-            Text(
-              'Objectif : publier ${_remainingPostsHint(profile)} nouvelles photos pour passer niveau ${profile.level + 1}.',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: Colors.grey[600]),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Publie ${_postsNeeded(profile)} photo${_postsNeeded(profile) > 1 ? 's' : ''} '
+                'pour atteindre le niveau ${profile.level + 1}.',
+            style: SiteFonts.mono(size: 11),
+          ),
+        ],
       ),
     );
   }
 
-  int _remainingPostsHint(UserProfile profile) {
+  int _postsNeeded(UserProfile profile) {
     const xpPerPost = 40;
-    final remainingXp = UserProfile.xpPerLevel - profile.xpIntoLevel;
-    return (remainingXp / xpPerPost).ceil();
+    final remaining = UserProfile.xpPerLevel - profile.xpIntoLevel;
+    return (remaining / xpPerPost).ceil();
   }
 }
+
+// ─── Recent posts card ────────────────────────────────────────────────────────
 
 class _RecentPostsCard extends StatelessWidget {
   final String ownerId;
   final PhotoService photoService;
 
-  const _RecentPostsCard({
-    required this.ownerId,
-    required this.photoService,
-  });
+  const _RecentPostsCard({required this.ownerId, required this.photoService});
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Publications récentes',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 6),
-            Text(
-              'Basé sur les photos associées à ton UID/local ID.',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 12),
-            StreamBuilder<List<SitePhoto>>(
-              stream: photoService.watchPhotosByOwner(ownerId),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-                if (snapshot.hasError) {
-                  return Text(
-                    'Erreur de chargement des photos.',
-                    style: TextStyle(
-                        color: Theme.of(context).colorScheme.error),
-                  );
-                }
-                final photos = snapshot.data ?? [];
-                if (photos.isEmpty) {
-                  return Text(
-                    'Aucune publication pour le moment.',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: Colors.grey[600]),
-                  );
-                }
-                final recent = photos.take(3).toList();
-                return Column(
-                  children: recent.map((photo) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Row(
-                        children: [
-                          _PhotoThumb(base64Image: photo.imageBase64),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  photo.description.isEmpty
-                                      ? 'Sans description'
-                                      : photo.description,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyLarge
-                                      ?.copyWith(fontWeight: FontWeight.w600),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${_formatVisibility(photo.visibility)} · ${_formatRelativeTime(photo.takenAt)}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(color: Colors.grey[600]),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Icon(Icons.chevron_right, color: Colors.grey[500]),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                );
-              },
-            ),
-          ],
-        ),
+    return _SurfaceCard(
+      padding: EdgeInsets.zero,
+      child: StreamBuilder<List<SitePhoto>>(
+        stream: photoService.watchPhotosByOwner(ownerId),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: SiteColors.amber, strokeWidth: 2,
+                ),
+              ),
+            );
+          }
+          if (snapshot.hasError) {
+            return Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Erreur de chargement.',
+                style: SiteFonts.mono(size: 12, color: SiteColors.red),
+              ),
+            );
+          }
+
+          final photos = (snapshot.data ?? []).take(3).toList();
+          if (photos.isEmpty) {
+            return Padding(
+              padding: const EdgeInsets.all(20),
+              child: Text(
+                'Aucune publication pour le moment.',
+                style: SiteFonts.mono(size: 12),
+              ),
+            );
+          }
+
+          return Column(
+            children: List.generate(photos.length, (i) {
+              final photo = photos[i];
+              final isLast = i == photos.length - 1;
+              return _PostRow(photo: photo, showDivider: !isLast);
+            }),
+          );
+        },
       ),
     );
   }
+}
 
-  String _formatVisibility(String value) {
-    switch (value) {
-      case 'public':
-        return 'Public';
-      case 'hidden':
-        return 'Masqué';
-      case 'private':
-        return 'Privé';
-      default:
-        return value;
-    }
+class _PostRow extends StatelessWidget {
+  final SitePhoto photo;
+  final bool showDivider;
+
+  const _PostRow({required this.photo, required this.showDivider});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              _PhotoThumb(base64Image: photo.imageBase64),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      photo.description.isEmpty ? 'Sans description' : photo.description,
+                      style: SiteFonts.body(size: 13).copyWith(fontWeight: FontWeight.w500),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 5),
+                    Row(
+                      children: [
+                        _VisPill(visibility: photo.visibility),
+                        const SizedBox(width: 8),
+                        Text(
+                          _relativeTime(photo.takenAt),
+                          style: SiteFonts.mono(size: 10),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: SiteColors.muted, size: 16),
+            ],
+          ),
+        ),
+        if (showDivider)
+          const Divider(indent: 14, endIndent: 14),
+      ],
+    );
   }
 
-  String _formatRelativeTime(DateTime date) {
-    final now = DateTime.now();
-    final diff = now.difference(date);
-    if (diff.inMinutes < 60) {
-      return 'Il y a ${diff.inMinutes} min';
-    }
-    if (diff.inHours < 24) {
-      return 'Il y a ${diff.inHours} h';
-    }
-    if (diff.inDays < 7) {
-      return 'Il y a ${diff.inDays} j';
-    }
+  String _relativeTime(DateTime date) {
+    final diff = DateTime.now().difference(date);
+    if (diff.inMinutes < 60)  return 'Il y a ${diff.inMinutes} min';
+    if (diff.inHours   < 24)  return 'Il y a ${diff.inHours} h';
+    if (diff.inDays    < 7)   return 'Il y a ${diff.inDays} j';
     return '${date.day.toString().padLeft(2, '0')}/'
         '${date.month.toString().padLeft(2, '0')}/'
         '${date.year}';
   }
 }
 
+// ─── Shared primitives ────────────────────────────────────────────────────────
+
+class _SurfaceCard extends StatelessWidget {
+  final Widget child;
+  final VoidCallback? onTap;
+  final EdgeInsets? padding;
+
+  const _SurfaceCard({required this.child, this.onTap, this.padding});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: SiteColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: SiteColors.border, width: 0.5),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: onTap != null
+          ? InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: padding ?? const EdgeInsets.all(16),
+          child: child,
+        ),
+      )
+          : Padding(
+        padding: padding ?? const EdgeInsets.all(16),
+        child: child,
+      ),
+    );
+  }
+}
+
+class _Avatar extends StatelessWidget {
+  final File? avatarFile;
+  final String initials;
+
+  const _Avatar({required this.avatarFile, required this.initials});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 52,
+      height: 52,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: SiteColors.amberDim,
+        border: Border.all(color: SiteColors.amber, width: 2),
+        image: avatarFile != null
+            ? DecorationImage(image: FileImage(avatarFile!), fit: BoxFit.cover)
+            : null,
+      ),
+      child: avatarFile == null
+          ? Center(
+        child: Text(initials, style: SiteFonts.heading(size: 18).copyWith(color: SiteColors.amber)),
+      )
+          : null,
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _StatusBadge({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 0.5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.check_circle_outline, size: 10, color: color),
+          const SizedBox(width: 4),
+          Text(label, style: SiteFonts.mono(size: 10, color: color)),
+        ],
+      ),
+    );
+  }
+}
+
+class _VisPill extends StatelessWidget {
+  final String visibility;
+  const _VisPill({required this.visibility});
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, fg, bg, bdr) = switch (visibility) {
+      'public'  => ('Public',  SiteColors.blue,   SiteColors.publicBg,  SiteColors.publicBdr),
+      'hidden'  => ('Masqué',  SiteColors.amber,  SiteColors.hiddenBg,  SiteColors.hiddenBdr),
+      'private' => ('Privé',   SiteColors.purple, SiteColors.privateBg, SiteColors.privateBdr),
+      _         => (visibility, SiteColors.muted, Colors.transparent,   SiteColors.border),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: bdr, width: 0.5),
+      ),
+      child: Text(label, style: SiteFonts.mono(size: 10, color: fg)),
+    );
+  }
+}
+
 class _PhotoThumb extends StatelessWidget {
   final String base64Image;
-
   const _PhotoThumb({required this.base64Image});
 
   @override
   Widget build(BuildContext context) {
-    Widget content = const Icon(Icons.image_outlined);
+    Widget child = const Icon(Icons.image_outlined, color: SiteColors.muted, size: 20);
     if (base64Image.isNotEmpty) {
       try {
         final bytes = base64Decode(base64Image);
-        content = Image.memory(bytes, fit: BoxFit.cover);
+        child = Image.memory(bytes, fit: BoxFit.cover);
       } catch (_) {
-        content = const Icon(Icons.broken_image_outlined);
+        child = const Icon(Icons.broken_image_outlined, color: SiteColors.muted, size: 20);
       }
     }
     return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(8),
       child: Container(
-        width: 52,
-        height: 52,
-        color: Colors.grey[200],
+        width: 46, height: 46,
+        color: SiteColors.surface2,
         alignment: Alignment.center,
-        child: content,
+        child: child,
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text.toUpperCase(),
+      style: SiteFonts.mono(size: 10).copyWith(letterSpacing: 0.12),
+    );
+  }
+}
+
+class _IconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _IconButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 36, height: 36,
+        decoration: BoxDecoration(
+          color: SiteColors.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: SiteColors.border, width: 0.5),
+        ),
+        child: Icon(icon, color: SiteColors.muted, size: 18),
       ),
     );
   }
