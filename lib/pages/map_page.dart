@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import '../models/site_photo.dart';
 import '../services/photo_service.dart';
+import '../services/profile_service.dart';
 import '../widgets/user_location_marker.dart';
 import '../widgets/gps_status_banner.dart';
 import '../widgets/app_theme.dart';
@@ -20,9 +21,10 @@ class MapPage extends StatefulWidget {
 class MapPageState extends State<MapPage> {
   final MapController _mapController = MapController();
   final PhotoService _photoService = PhotoService();
+  final Set<String> _notifiedHiddenIds = {};
 
   static const Duration _refreshInterval    = Duration(seconds: 3);
-  static const double   _hiddenDistanceMeters = 15;
+  static const double   _hiddenDistanceMeters = 100;
 
   LatLng?        _userLocation;
   List<SitePhoto> _visiblePhotos = [];
@@ -98,7 +100,9 @@ class MapPageState extends State<MapPage> {
     final userPos   = await _getUserLocation();
     final allPhotos = await _photoService.fetchPhotos();
     final filtered  = _filterPhotos(allPhotos, userPos);
-    if (mounted) setState(() => _visiblePhotos = filtered);
+    if (!mounted) return;
+    setState(() => _visiblePhotos = filtered);
+    await _maybeNotifyHiddenArt(filtered, userPos);
   }
 
   List<SitePhoto> _filterPhotos(List<SitePhoto> photos, LatLng? userPos) {
@@ -119,6 +123,32 @@ class MapPageState extends State<MapPage> {
           return false;
       }
     }).toList();
+  }
+
+  Future<void> _maybeNotifyHiddenArt(
+    List<SitePhoto> visible,
+    LatLng? userPos,
+  ) async {
+    if (!mounted || userPos == null) return;
+    final newlyHidden = visible
+        .where((photo) =>
+            photo.visibility == 'hidden' &&
+            !_notifiedHiddenIds.contains(photo.id))
+        .toList();
+    if (newlyHidden.isEmpty) return;
+
+    for (final photo in newlyHidden) {
+      _notifiedHiddenIds.add(photo.id);
+      await ProfileService.instance.awardHiddenArtXp();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tu es proche d\'un art magnifique, 2x EXP'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   // ─── Photo detail sheet ───────────────────────────────────────────────────
@@ -180,7 +210,7 @@ class MapPageState extends State<MapPage> {
                             border: Border.all(color: c.bdr, width: 2.5),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.4),
+                                color: Colors.black.withValues(alpha: 0.4),
                                 blurRadius: 6,
                                 offset: const Offset(0, 3),
                               ),

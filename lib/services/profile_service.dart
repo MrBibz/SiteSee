@@ -13,6 +13,13 @@ class ProfileService {
   static const String _keyAvatarPath = 'profile.avatarPath';
   static const String _keyFirebaseUid = 'profile.firebaseUid';
   static const String _keyXp = 'profile.xp';
+  static const String _keyPhotoXpDate = 'profile.photoXpDate';
+  static const String _keyPhotoXpCount = 'profile.photoXpCount';
+
+  static const int xpPerPhoto = 20;
+  static const int xpAfterLimit = 2;
+  static const int dailyPhotoLimit = 5;
+  static const int hiddenArtMultiplier = 2;
 
   SharedPreferences? _prefs;
   UserProfile? _profile;
@@ -44,6 +51,34 @@ class ProfileService {
 
   String get ownerId => profile.ownerId;
 
+  Future<int> awardPhotoUploadXp() async {
+    final prefs = _prefs ?? await SharedPreferences.getInstance();
+    _prefs = prefs;
+
+    final todayKey = _todayKey();
+    final storedDate = prefs.getString(_keyPhotoXpDate);
+    int count = prefs.getInt(_keyPhotoXpCount) ?? 0;
+    if (storedDate != todayKey) {
+      count = 0;
+      await prefs.setString(_keyPhotoXpDate, todayKey);
+    }
+
+    final awarded = count < dailyPhotoLimit ? xpPerPhoto : xpAfterLimit;
+    count += 1;
+    await prefs.setInt(_keyPhotoXpCount, count);
+
+    final updated = profile.copyWith(xp: profile.xp + awarded);
+    await save(updated);
+    return awarded;
+  }
+
+  Future<int> awardHiddenArtXp() async {
+    final awarded = xpPerPhoto * hiddenArtMultiplier;
+    final updated = profile.copyWith(xp: profile.xp + awarded);
+    await save(updated);
+    return awarded;
+  }
+
   Future<void> save(UserProfile updated) async {
     final prefs = _prefs ?? await SharedPreferences.getInstance();
     _prefs = prefs;
@@ -64,5 +99,11 @@ class ProfileService {
       await prefs.setString(_keyFirebaseUid, updated.firebaseUid!);
     }
     await prefs.setInt(_keyXp, updated.xp);
+  }
+
+  String _todayKey() {
+    final now = DateTime.now();
+    return '${now.year}-${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')}';
   }
 }

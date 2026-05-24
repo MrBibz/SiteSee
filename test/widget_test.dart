@@ -13,6 +13,6 @@ void main() {
     await tester.pumpWidget(const MainApp());
     await tester.pump();
 
-    expect(find.text('Menu d\'accueil'), findsOneWidget);
+    expect(find.text('PUBLICATIONS RÉCENTES'), findsOneWidget);
   });
 }

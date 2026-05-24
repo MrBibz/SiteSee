@@ -49,7 +49,7 @@ class _GpsStatusBannerState extends State<GpsStatusBanner>
               // Pulsing amber dot — replaces the generic CircularProgressIndicator
               AnimatedBuilder(
                 animation: _pulse,
-                builder: (_, __) => Container(
+                builder: (_, _) => Container(
                   width: 7,
                   height: 7,
                   decoration: BoxDecoration(

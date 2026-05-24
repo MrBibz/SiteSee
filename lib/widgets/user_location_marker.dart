@@ -57,7 +57,7 @@ class _UserLocationMarkerState extends State<UserLocationMarker>
                   // Animated expanding ring
                   AnimatedBuilder(
                     animation: _ring,
-                    builder: (_, __) => Transform.scale(
+                    builder: (_, _) => Transform.scale(
                       scale: _scale.value,
                       child: Container(
                         width: 52,

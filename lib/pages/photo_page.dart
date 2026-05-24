@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../widgets/photo_picker_sheet.dart';
 import '../services/photo_service.dart';
+import '../services/profile_service.dart';
 import '../models/site_photo.dart';
 import '../widgets/app_theme.dart';
 
@@ -65,6 +66,8 @@ class _PhotoPageState extends State<PhotoPage> {
         description: description,
         visibility:  _visibility,
       );
+      final gained = await ProfileService.instance.awardPhotoUploadXp();
+      if (!mounted) return;
       setState(() {
         _lastUploaded = photo;
         _selectedFile = null;
@@ -72,6 +75,12 @@ class _PhotoPageState extends State<PhotoPage> {
         _visibility  = 'public';
         _isUploading = false;
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('+$gained EXP gagnés !'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
     } catch (e) {
       setState(() { _isUploading = false; _errorMessage = 'Erreur upload : $e'; });
     }

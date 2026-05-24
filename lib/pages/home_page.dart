@@ -127,8 +127,9 @@ class _LevelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final xpInto  = profile.xpIntoLevel;
+    final xpInto = profile.xpIntoLevel;
     final xpTotal = UserProfile.xpPerLevel;
+    final remaining = xpTotal - xpInto;
 
     return _SurfaceCard(
       child: Column(
@@ -160,19 +161,24 @@ class _LevelCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'Publie ${_postsNeeded(profile)} photo${_postsNeeded(profile) > 1 ? 's' : ''} '
-                'pour atteindre le niveau ${profile.level + 1}.',
+            'Prochain niveau dans $remaining EXP.',
+            style: SiteFonts.mono(size: 11),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '${ProfileService.xpPerPhoto} EXP / photo '
+            '(${ProfileService.dailyPhotoLimit}/jour, puis '
+            '${ProfileService.xpAfterLimit} EXP).',
+            style: SiteFonts.mono(size: 11),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Art masqué : ${ProfileService.hiddenArtMultiplier}x EXP hors limite.',
             style: SiteFonts.mono(size: 11),
           ),
         ],
       ),
     );
-  }
-
-  int _postsNeeded(UserProfile profile) {
-    const xpPerPost = 40;
-    final remaining = UserProfile.xpPerLevel - profile.xpIntoLevel;
-    return (remaining / xpPerPost).ceil();
   }
 }
 
