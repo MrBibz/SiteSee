@@ -86,7 +86,7 @@ flutter run
 
 ---
 
-## 🎮 How to Demo the App (Hackathon Track)
+## How to Demo the App (Hackathon Track)
 
 To experience the core proximity logic during static testing, we recommend utilizing an emulator capable of **GPS Mocking/Telemetry Injection**:
 
