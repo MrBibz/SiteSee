@@ -1,119 +1,114 @@
-# SiteSee Redesign — Integration Guide
+# 🗺️ SiteSee
 
-## Files in this bundle
-
-| File | Replaces |
-|------|----------|
-| `app_theme.dart` | *(new)* — design tokens + `buildSiteSeeTheme()` |
-| `bottom_nav_bar.dart` | `bottom_nav_bar.dart` |
-| `gps_status_banner.dart` | `gps_status_banner.dart` |
-| `user_location_marker.dart` | `user_location_marker.dart` |
-| `photo_picker_sheet.dart` | `photo_picker_sheet.dart` |
-| `home_page.dart` | `home_page.dart` |
-| `map_page.dart` | `map_page.dart` |
-| `photo_page.dart` | `photo_page.dart` |
-| `profile_page.dart` | `profile_page.dart` |
+> **"Where to see a Site, and some even hidden."**
+> Built for the Hackathon, SiteSee is a location-aware photo-sharing platform designed with gamified progression, adaptive spatial privacy thresholds, and real-time proximity-based content unlocking.
 
 ---
 
-## 1. Add fonts to pubspec.yaml
+## 🚀 The Problem & Our Solution
 
-```yaml
-flutter:
-  fonts:
-    - family: Syne
-      fonts:
-        - asset: assets/fonts/Syne-Regular.ttf   weight: 400
-        - asset: assets/fonts/Syne-Bold.ttf       weight: 700
-    - family: DM Sans
-      fonts:
-        - asset: assets/fonts/DMSans-Regular.ttf  weight: 400
-        - asset: assets/fonts/DMSans-Medium.ttf   weight: 500
-    - family: DM Mono
-      fonts:
-        - asset: assets/fonts/DMMono-Regular.ttf  weight: 400
-        - asset: assets/fonts/DMMono-Medium.ttf   weight: 500
-```
+Traditional photo-sharing apps suffer from content oversaturation, detached engagement, and rigid privacy choices. Users are rarely encouraged to physically explore environments, and location settings are binary: entirely public or entirely private.
 
-Alternatively use the `google_fonts` package and replace the `fontFamily`
-strings in `SiteFonts` with `GoogleFonts.syne(...)` etc.
+**SiteSee re-engineers location sharing into an exploratory game:**
+
+* **Proximity-Locked Content ("Hidden Sites"):** Content creators can hide photos in the physical world. Other users can only view the high-resolution photo and details when their real-time device coordinates are **within 15 meters** of the spot.
+* **Exploration Gamification:** Every shared site earns experience points (XP). As users travel and post, they level up, turning urban exploration into an adventure.
+* **Fluid Privacy Tiers:** Posts adapt natively to user context—supporting fully **Public**, proximity-bound **Hidden**, and secure **Private** vaults.
 
 ---
 
-## 2. Apply the theme in main.dart
+## ✨ Features
 
-```dart
-import 'widgets/app_theme.dart';
+* **Interactive Exploration Radar Map:** Powered by OpenStreetMap and custom map layers, rendering custom, color-coded, real-time spatial indicators for different visibility styles.
+* **Proximity Filter Engine:** Background evaluation architecture that loops every 3 seconds to measure geodesic distance ($\le 15\text{m}$) using high-accuracy device GPS tracking.
+* **Dynamic Navigation Interface:** Smooth tab navigation with a custom frosted glass navigation bar that automatically intercepts layout callbacks (e.g., clicking a recent item on the dashboard instantly pans the map layer and pulls up the location context window).
+* **Native Device Bridges:** Direct integration with native storage pipelines and hardware camera modules for lightning-fast image serialization and base64 parsing.
+* **XP & Levelling Engine:** Custom live progress calculation tracking that tells the user exactly how much real-world discovery remains to reach the next tier.
 
-MaterialApp(
-  theme: buildSiteSeeTheme(),
-  // ...
-)
+---
+
+## 🛠️ Architecture & Tech Stack
+
+SiteSee uses a clean, decoupling layout pattern separating the presentation screens from underlying domain services:
+
+* **Frontend Framework:** [Flutter](https://flutter.dev/) (Dart)
+* **Map & Spatial System:** [Flutter Map](https://pub.dev/packages/flutter_map) & [Geolocator](https://pub.dev/packages/geolocator) (OpenStreetMap data)
+* **Backend Services:** [Firebase Core](https://firebase.google.com/) (Identity & Cloud synchronization infrastructure)
+* **Local Staging:** Custom Async Dart Services (Memory & Local Storage persistence)
+
+### 📂 Directory Overview
+
+```text
+lib/
+├── models/         # Pure data structures (SitePhoto, UserProfile)
+├── services/       # Core business logic & persistence (PhotoService, ProfileService)
+├── pages/          # Primary view scaffolds (HomePage, MapPage, PhotoPage, ProfilePage)
+└── widgets/        # Reusable custom UI items, map markers, and design tokens (AppTheme)
+
 ```
 
 ---
 
-## 3. Place app_theme.dart
+## ⚡ Quick Start & Installation
 
-Put `app_theme.dart` in your `lib/widgets/` folder so the import path
-`../widgets/app_theme.dart` works from all pages.
+### Prerequisites
 
----
+* Flutter SDK (`>= 3.0.0`)
+* Android Studio / Xcode (for emulation/device running)
+* Valid GPS permissions enabled on target runtime environment
 
-## 4. Optional — dark map tiles on MapPage
+### Steps
 
-In `map_page.dart`, swap the `TileLayer` URL to CartoDB Dark Matter for a
-fully dark map aesthetic:
+1. **Clone the repository:**
+```bash
+git clone https://github.com/your-username/site-see.git
+cd site-see
 
-```dart
-urlTemplate:
-  'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-subdomains: const ['a', 'b', 'c', 'd'],
 ```
 
-Add attribution per CartoDB's terms.
+
+2. **Install dependecies:**
+```bash
+flutter pub get
+
+```
+
+
+3. **Configure Firebase (Optional for Local Mode):**
+   Ensure your local environment configuration is linked via the FlutterFire CLI, or supply an initialized `google-services.json` / `GoogleService-Info.plist`.
+4. **Run the Application:**
+```bash
+flutter run
+
+```
+
+
 
 ---
 
-## 5. What changed visually
+## 🎮 How to Demo the App (Hackathon Track)
 
-### Global
-- Dark bg `#0D1117` / surfaces `#161B22` / `#1C2230`
-- Amber `#E8A020` as the single accent (GPS dot, active nav, level, buttons)
-- Monospace font (DM Mono) for all data — labels, IDs, timestamps, visibility pills
-- Display font (Syne) for headings and names
+To experience the core proximity logic during static testing, we recommend utilizing an emulator capable of **GPS Mocking/Telemetry Injection**:
 
-### AppBar
-- No elevation, dark bg, Syne title
+1. **The Dashboard:** Start on the *Accueil* tab to check out your current level status and view the most recent global publications.
+2. **Snap a Site:** Move to the *Photo* tab. Capture or pick a picture, input a description, set visibility to **Hidden**, and tap publish. Your precise coordinates are automatically packaged with the image data.
+3. **The Radar View:** Head over to the *Carte* tab. Your newly published site will appear on the map.
+4. **Test Proximity Locking:** * Mock your device location to a distance **greater than 15 meters** away from your picture's coordinates. The point remains locked or conditionally hidden.
+* Update your mocked GPS location back to **within 15 meters** of the pin. Within 3 seconds, the tracking engine triggers an update, making the marker fully interactive and allowing you to pop open the bottom context card.
 
-### BottomNavBar
-- Custom dark bar replaces `NavigationBar`
-- Animated icon swap on tab press, amber active state
 
-### GpsStatusBanner
-- Pulsing amber dot replaces `CircularProgressIndicator`
-- Dark pill container, no white box
+5. **Quick Jump Validation:** Tap any item in the *Publications récentes* section on the home page—the app will programmatically switch tabs, animate the camera view over the target point, and automatically present the photo details panel.
 
-### UserLocationMarker
-- Animated expanding ring (repeating scale+fade)
-- Amber dot with dark bg border
+---
 
-### HomePage
-- Profile card: amber-bordered avatar circle, initials fallback, green badge
-- Level card: large amber level number, 4 px progress bar
-- Posts: coloured visibility pills (blue/amber/purple), divider rows
+## 👥 The Team
 
-### MapPage
-- Rounded-square photo pins coloured by visibility
-- Compact map legend bottom-left
-- Redesigned photo detail sheet (chips for visibility + GPS)
+Built with 💛 for the hackathon by:
 
-### PhotoPage
-- Empty state: tap-to-add illustration
-- Visibility: segmented 3-button control (replaces dropdown)
-- Metadata card: monospace two-column rows
+* **Nicolas Bibeau** 
+* **Hamza Gharbi**
+* **Jory Trabajada**
 
-### ProfilePage
-- Centered header with avatar, stats grid (Level / XP total / Progress %)
-- "Sauvegarder" moved to AppBar action
-- Fields grouped in dark cards with monospace labels
+---
+
+*SiteSee — Re-discovering the world around you, one hidden site at a time.*
