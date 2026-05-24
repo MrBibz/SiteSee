@@ -50,12 +50,12 @@ class UserProfile {
   factory UserProfile.defaults({required String localId}) {
     return UserProfile(
       localId: localId,
-      displayName: 'Bibz',
-      username: 'bibz',
-      bio: 'Explorateur urbain en mission.',
+      displayName: 'Default',
+      username: 'Default',
+      bio: 'Replace ce message pour changer votre bio.',
       avatarPath: null,
       firebaseUid: null,
-      xp: 120,
+      xp: 0,
     );
   }
 }
