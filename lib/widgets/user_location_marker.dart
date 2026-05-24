@@ -30,7 +30,7 @@ class UserLocationMarker extends StatelessWidget {
                     color: Theme.of(context)
                         .colorScheme
                         .primary
-                        .withOpacity(0.4),
+                        .withValues(alpha: 0.4),
                     blurRadius: 10,
                     spreadRadius: 4,
                   ),
