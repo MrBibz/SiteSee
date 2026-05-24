@@ -6,12 +6,17 @@ import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
 
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+
+import android.Manifest;
+import android.content.pm.PackageManager;
 
 import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.FlutterEngine;
@@ -22,6 +27,7 @@ public class MainActivity extends FlutterActivity {
     private static final String CHANNEL = "com.sitesee.site_see/camera";
     private static final int REQUEST_CAMERA  = 1001;
     private static final int REQUEST_GALLERY = 1002;
+    private static final int REQUEST_CAMERA_PERMISSION = 1101;
 
     private MethodChannel.Result pendingResult;
     private File photoFile;
@@ -54,6 +60,16 @@ public class MainActivity extends FlutterActivity {
     // Lance la caméra Android native via ACTION_IMAGE_CAPTURE
     private void launchCamera() {
         try {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                        this,
+                        new String[] { Manifest.permission.CAMERA },
+                        REQUEST_CAMERA_PERMISSION
+                );
+                return;
+            }
+
             photoFile = createImageFile();
 
             Uri photoUri = FileProvider.getUriForFile(
@@ -125,6 +141,23 @@ public class MainActivity extends FlutterActivity {
 
         pendingResult = null;
         photoFile = null;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode != REQUEST_CAMERA_PERMISSION) return;
+
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            launchCamera();
+            return;
+        }
+
+        if (pendingResult != null) {
+            pendingResult.error("CAMERA_PERMISSION_DENIED", "Permission caméra refusée.", null);
+            pendingResult = null;
+        }
     }
 
     // Convertit un content:// URI en chemin absolu lisible par Flutter
