@@ -207,8 +207,6 @@ class _ImagePreview extends StatelessWidget {
           border: Border.all(
             color: SiteColors.border,
             width: 0.5,
-            // Dashed border via CustomPainter is complex; use a solid subtle border
-            // and rely on the empty-state illustration for affordance.
           ),
         ),
         child: Column(

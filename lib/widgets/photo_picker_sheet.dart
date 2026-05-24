@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'app_theme.dart';
 
-/// Native Android camera bridge — unchanged from original.
 class NativeCamera {
   static const _channel = MethodChannel('com.sitesee.site_see/camera');
 
@@ -12,8 +11,6 @@ class NativeCamera {
   }
 }
 
-/// Dark bottom sheet for picking or capturing a photo.
-/// [onPathSelected] receives the absolute file path of the chosen image.
 class PhotoPickerSheet extends StatelessWidget {
   final ValueChanged<String> onPathSelected;
 

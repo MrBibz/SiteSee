@@ -9,7 +9,9 @@ import 'profile_page.dart';
 import '../widgets/app_theme.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final Function(double lat, double lng)? onPhotoTap;
+
+  const HomePage({super.key, this.onPhotoTap});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -33,15 +35,6 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('SiteSee'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: _IconButton(
-              icon: Icons.settings_outlined,
-              onTap: () {},
-            ),
-          ),
-        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -58,6 +51,7 @@ class _HomePageState extends State<HomePage> {
               _RecentPostsCard(
                 ownerId: profile.ownerId,
                 photoService: _photoService,
+                onPhotoTap: widget.onPhotoTap,
               ),
             ],
           ),
@@ -155,7 +149,6 @@ class _LevelCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          // Thin progress track
           ClipRRect(
             borderRadius: BorderRadius.circular(2),
             child: LinearProgressIndicator(
@@ -188,8 +181,13 @@ class _LevelCard extends StatelessWidget {
 class _RecentPostsCard extends StatelessWidget {
   final String ownerId;
   final PhotoService photoService;
+  final Function(double lat, double lng)? onPhotoTap;
 
-  const _RecentPostsCard({required this.ownerId, required this.photoService});
+  const _RecentPostsCard({
+    required this.ownerId,
+    required this.photoService,
+    this.onPhotoTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -233,7 +231,13 @@ class _RecentPostsCard extends StatelessWidget {
             children: List.generate(photos.length, (i) {
               final photo = photos[i];
               final isLast = i == photos.length - 1;
-              return _PostRow(photo: photo, showDivider: !isLast);
+              return _PostRow(
+                photo: photo,
+                showDivider: !isLast,
+                onTap: onPhotoTap != null
+                    ? () => onPhotoTap!(photo.latitude, photo.longitude)
+                    : null,
+              );
             }),
           );
         },
@@ -245,45 +249,53 @@ class _RecentPostsCard extends StatelessWidget {
 class _PostRow extends StatelessWidget {
   final SitePhoto photo;
   final bool showDivider;
+  final VoidCallback? onTap;
 
-  const _PostRow({required this.photo, required this.showDivider});
+  const _PostRow({
+    required this.photo,
+    required this.showDivider,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Row(
-            children: [
-              _PhotoThumb(base64Image: photo.imageBase64),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      photo.description.isEmpty ? 'Sans description' : photo.description,
-                      style: SiteFonts.body(size: 13).copyWith(fontWeight: FontWeight.w500),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 5),
-                    Row(
-                      children: [
-                        _VisPill(visibility: photo.visibility),
-                        const SizedBox(width: 8),
-                        Text(
-                          _relativeTime(photo.takenAt),
-                          style: SiteFonts.mono(size: 10),
-                        ),
-                      ],
-                    ),
-                  ],
+        InkWell(
+          onTap: onTap, // Wrapped row item with InkWell to handle navigation trigger
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                _PhotoThumb(base64Image: photo.imageBase64),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        photo.description.isEmpty ? 'Sans description' : photo.description,
+                        style: SiteFonts.body(size: 13).copyWith(fontWeight: FontWeight.w500),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          _VisPill(visibility: photo.visibility),
+                          const SizedBox(width: 8),
+                          Text(
+                            _relativeTime(photo.takenAt),
+                            style: SiteFonts.mono(size: 10),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const Icon(Icons.chevron_right, color: SiteColors.muted, size: 16),
-            ],
+                const Icon(Icons.chevron_right, color: SiteColors.muted, size: 16),
+              ],
+            ),
           ),
         ),
         if (showDivider)
@@ -452,28 +464,6 @@ class _SectionLabel extends StatelessWidget {
     return Text(
       text.toUpperCase(),
       style: SiteFonts.mono(size: 10).copyWith(letterSpacing: 0.12),
-    );
-  }
-}
-
-class _IconButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _IconButton({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 36, height: 36,
-        decoration: BoxDecoration(
-          color: SiteColors.surface,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: SiteColors.border, width: 0.5),
-        ),
-        child: Icon(icon, color: SiteColors.muted, size: 18),
-      ),
     );
   }
 }

@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SiteSee Design Tokens
-// Single source of truth — import this wherever you need colours or typography.
 // ─────────────────────────────────────────────────────────────────────────────
 
 abstract class SiteColors {

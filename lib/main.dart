@@ -37,16 +37,36 @@ class MainScaffold extends StatefulWidget {
 
 class _MainScaffoldState extends State<MainScaffold> {
   int _selectedIndex = 0;
-  final List<Widget> _pages = const [
-    HomePage(),
-    PhotoPage(),
-    MapPage(),
-  ];
+
+  final GlobalKey<MapPageState> _mapPageKey = GlobalKey<MapPageState>();
+
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      HomePage(
+        onPhotoTap: (lat, lng) {
+          setState(() => _selectedIndex = 2);
+
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _mapPageKey.currentState?.moveMapToCoordinates(lat, lng);
+          });
+        },
+      ),
+      const PhotoPage(),
+      MapPage(key: _mapPageKey),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_selectedIndex],
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
+      ),
       bottomNavigationBar: AppBottomNavBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) =>

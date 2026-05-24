@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'app_theme.dart';
 
-/// Floating pill banner shown on the map while the GPS position is unknown.
-/// Disappears as soon as the parent stops rendering it.
 class GpsStatusBanner extends StatefulWidget {
   final String message;
 

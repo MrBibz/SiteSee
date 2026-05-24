@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'app_theme.dart';
 
-/// Custom frosted bottom navigation bar.
-/// Receives the active [selectedIndex] and fires [onDestinationSelected].
 class AppBottomNavBar extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;

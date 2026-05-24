@@ -14,10 +14,10 @@ class MapPage extends StatefulWidget {
   const MapPage({super.key});
 
   @override
-  State<MapPage> createState() => _MapPageState();
+  State<MapPage> createState() => MapPageState();
 }
 
-class _MapPageState extends State<MapPage> {
+class MapPageState extends State<MapPage> {
   final MapController _mapController = MapController();
   final PhotoService _photoService = PhotoService();
 
@@ -41,6 +41,10 @@ class _MapPageState extends State<MapPage> {
   void dispose() {
     _refreshTimer?.cancel();
     super.dispose();
+  }
+
+  void moveMapToCoordinates(double latitude, double longitude) {
+    _mapController.move(LatLng(latitude, longitude), 16);
   }
 
   // ─── GPS ──────────────────────────────────────────────────────────────────
@@ -149,10 +153,6 @@ class _MapPageState extends State<MapPage> {
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.example.flutter_demo',
-                // Dark map tiles look great with this theme.
-                // Swap the URL to a dark tile provider (e.g. CartoDB Dark Matter)
-                // for the full dark aesthetic:
-                // 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
               ),
               if (_userLocation != null)
                 UserLocationMarker(position: _userLocation!),
@@ -162,17 +162,24 @@ class _MapPageState extends State<MapPage> {
                     final c = _pinColors(photo.visibility);
                     return Marker(
                       point: LatLng(photo.latitude, photo.longitude),
-                      width: 44,
-                      height: 44,
+                      width: 48,
+                      height: 48,
                       child: GestureDetector(
                         onTap: () => _showPhotoDetails(photo),
                         child: Container(
                           decoration: BoxDecoration(
                             color: c.bg,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: c.bdr, width: 1.5),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: c.bdr, width: 2.5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.4),
+                                blurRadius: 6,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
                           ),
-                          child: Icon(Icons.photo_camera_outlined, color: c.fg, size: 20),
+                          child: Icon(Icons.photo_camera_outlined, color: c.fg, size: 22),
                         ),
                       ),
                     );

@@ -3,7 +3,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'app_theme.dart';
 
-/// Amber dot + soft glow ring showing the user's GPS position on the map.
 class UserLocationMarker extends StatefulWidget {
   final LatLng position;
 
